@@ -107,7 +107,10 @@ export default {
       ]
     },
     runtimeHelpers: {
-      type: 'boolean',
+      oneOf: [
+        { type: 'boolean' },
+        { type: 'object' },
+      ],
     },
     overridesByEntry: {
       type: 'object',

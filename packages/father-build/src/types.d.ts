@@ -46,7 +46,9 @@ export interface IBundleOptions {
   inject?: Object,
   autoprefixer?: Object;
   include?: string | RegExp;
-  runtimeHelpers?: boolean;
+  runtimeHelpers?: boolean | {
+    corejs: number
+  },
   target?: 'node' | 'browser';
   overridesByEntry?: {
     [entry: string]: any;

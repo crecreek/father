@@ -21,14 +21,13 @@ export function getBundleOpts(opts: IOpts): IBundleOptions[] {
     files: ['src/index.tsx', 'src/index.ts', 'src/index.jsx', 'src/index.js'],
     returnRelative: true,
   });
-  const userConfig = getUserConfig({ cwd });
+  const userConfig = getUserConfig({ cwd, rootConfig });
   const userConfigs = Array.isArray(userConfig) ? userConfig : [userConfig];
   return (userConfigs as any).map(userConfig => {
     const bundleOpts = merge(
       {
         entry,
       },
-      rootConfig,
       userConfig,
       buildArgs,
     );
@@ -46,13 +45,15 @@ export function getBundleOpts(opts: IOpts): IBundleOptions[] {
 }
 
 function validateBundleOpts(bundleOpts: IBundleOptions, { cwd, rootPath }) {
-  if (bundleOpts.runtimeHelpers) {
+  if (!!bundleOpts.runtimeHelpers) {
     const pkgPath = join(cwd, 'package.json');
-    assert.ok(existsSync(pkgPath), `@babel/runtime dependency is required to use runtimeHelpers`);
+    const runtimeName = '@babel/runtime'
+    typeof bundleOpts.runtimeHelpers === 'boolean' ? runtimeName : `${runtimeName}-corejs${bundleOpts.runtimeHelpers.corejs || '?2?3'}`
+    assert.ok(existsSync(pkgPath), `${runtimeName} dependency is required to use runtimeHelpers`);
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
     assert.ok(
-      (pkg.dependencies || {})['@babel/runtime'],
-      `@babel/runtime dependency is required to use runtimeHelpers`,
+      (pkg.dependencies || {})[runtimeName],
+      `${runtimeName} dependency is required to use runtimeHelpers`,
     );
   }
   if (bundleOpts.cjs && (bundleOpts.cjs as ICjs).lazy && (bundleOpts.cjs as ICjs).type === 'rollup') {
@@ -172,7 +173,7 @@ export async function build(opts: IOpts, extraOpts: IExtraBuildOpts = {}) {
 }
 
 export async function buildForLerna(opts: IOpts) {
-  const { cwd } = opts;
+  const { cwd, rootConfig = {} } = opts;
 
   // register babel for config files
   registerBabel({
@@ -180,7 +181,7 @@ export async function buildForLerna(opts: IOpts) {
     only: CONFIG_FILES,
   });
 
-  const userConfig = merge(getUserConfig({ cwd }), opts.rootConfig || {});
+  const userConfig = getUserConfig({ cwd, rootConfig });
 
   let pkgs = await getPackages(cwd);
 

@@ -5,7 +5,9 @@ interface IGetBabelConfigOpts {
   target: 'browser' | 'node';
   type?: ModuleFormat;
   typescript?: boolean;
-  runtimeHelpers?: boolean;
+  runtimeHelpers?: boolean | {
+    corejs: number
+  };
   filePath?: string;
   browserFiles?: {
     [value: string]: any;
@@ -78,10 +80,10 @@ export default function(opts: IGetBabelConfigOpts) {
         require.resolve('@babel/plugin-proposal-optional-chaining'),
         [require.resolve('@babel/plugin-proposal-decorators'), { legacy: true }],
         [require.resolve('@babel/plugin-proposal-class-properties'), { loose: true }],
-        ...(runtimeHelpers
+        ...(!!runtimeHelpers
           ? [[require.resolve('@babel/plugin-transform-runtime'), {
             useESModules: isBrowser && (type === 'esm'),
-            version: require('@babel/runtime/package.json').version,
+            corejs: typeof runtimeHelpers === 'boolean' ? false : runtimeHelpers.corejs
           }]]
           : []),
         ...(process.env.COVERAGE
